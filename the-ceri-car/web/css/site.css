@@ -1,0 +1,191 @@
+/* Déclarations des couleurs */
+:root {
+    --primary: #165A96;
+    --hover: #FFA500;
+    --active: #638fb9;
+}
+
+* {
+    /* Pour mettre les textes en couleur et laisser le fond en blanc */
+    color: var(--primary);
+}
+
+.navbar-custom {
+    background-color: #fff;
+}
+
+/* Titre de l'application : TheCeriCar */
+.navbar-brand {
+    color: var(--primary);
+    font-family: "Lobster", sans-serif;
+    font-weight: 400;
+    font-style: normal;
+    font-size: 30px;
+    transition: color 0.2s ease-in-out;
+}
+
+.navbar-brand:hover {
+    color: var(--hover);
+}
+
+/* Onglets de navigation */
+.navbar-custom .nav-link,
+.navbar-custom .btn .btn-link .logout {
+    color: var(--primary);
+    font-size: 20px;
+    transition: color 0.2s ease-in-out;
+}
+
+.navbar-custom .nav-link:hover,
+.navbar-custom .nav-item .nav-link.active:hover,
+.navbar-custom .btn .btn-link .logout:hover {
+    color: var(--hover)
+}
+
+/* Onglet de navigation actif */
+.navbar-custom .nav-item .nav-link.active {
+    color: var(--active);
+}
+
+/* Responsive de la navbar */
+.navbar-toggler {
+    color: var(--primary);
+    border: 2px solid var(--primary);
+}
+
+.navbar-toggler:hover,
+.navbar-toggler:focus {
+    color: var(--hover);
+    border-color: var(--hover);
+}
+
+/* Formulaire de recherche */
+.search-form {
+    background-color: #f8f9fa;
+    border-radius: 10px;
+    padding: 30px;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+}
+
+.search-form .flex-field {
+    width: 250px;   
+}
+
+.search-form .btn-custom {
+    background-color: var(--primary);
+    color: white;
+}
+
+.search-form .btn-custom:hover {
+    background-color: var(--hover);
+}
+
+.results-section {
+    margin-top: 40px;
+}
+
+.voyage-card {
+    margin-bottom: 20px;
+}
+
+.voyage-card .btn-custom {
+    background-color: var(--primary);
+    color: white;
+    transition: background-color 0.2s ease-in-out;
+}
+
+.voyage-card .btn-custom:hover {
+    background-color: var(--hover);
+    color: white;
+}
+
+main > .container {
+    padding: 70px 15px 20px;
+}
+
+.footer {
+    background-color: #f5f5f5;
+    font-size: .9em;
+    height: 60px;
+}
+
+.footer > .container {
+    padding-right: 15px;
+    padding-left: 15px;
+}
+
+.not-set {
+    color: #c55;
+    font-style: italic;
+}
+
+/* add sorting icons to gridview sort links */
+a.asc:after, a.desc:after {
+    content: '';
+    left: 3px;
+    display: inline-block;
+    width: 0;
+    height: 0;
+    border: solid 5px transparent;
+    margin: 4px 4px 2px 4px;
+    background: transparent;
+}
+
+a.asc:after {
+    border-bottom: solid 7px #212529;
+    border-top-width: 0;
+}
+
+a.desc:after {
+    border-top: solid 7px #212529;
+    border-bottom-width: 0;
+}
+
+.grid-view th {
+    white-space: nowrap;
+}
+
+.hint-block {
+    display: block;
+    margin-top: 5px;
+    color: #999;
+}
+
+.error-summary {
+    color: #a94442;
+    background: #fdf7f7;
+    border-left: 3px solid #eed3d7;
+    padding: 10px 20px;
+    margin: 0 0 15px 0;
+}
+
+/* align the logout "link" (button in form) of the navbar */
+.nav li > form > button.logout {
+    padding-top: 7px;
+}
+
+.nav li > form > button.logout:hover {
+    color: var(--hover);
+}
+
+@media(max-width:767px) {
+    .nav li > form > button.logout {
+        display:block;
+        text-align: left;
+        width: 100%;
+        padding: 10px 0;
+    }
+}
+
+.nav > li > form > button.logout:focus,
+.nav > li > form > button.logout:hover {
+    text-decoration: none;
+}
+
+.nav > li > form > button.logout:focus {
+    outline: none;
+}
+
+.form-group {
+    margin-bottom: 1rem;
+}

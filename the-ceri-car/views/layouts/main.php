@@ -19,9 +19,11 @@ $this->registerMetaTag(['name' => 'description', 'content' => $this->params['met
 $this->registerMetaTag(['name' => 'keywords', 'content' => $this->params['meta_keywords'] ?? '']);
 $this->registerLinkTag(['rel' => 'icon', 'type' => 'image/x-icon', 'href' => Yii::getAlias('@web/favicon.ico')]);
 
-// Ajout de mon fichier JavaScript dans le header des views pour implémenter les requêtes Ajax
-$this->registerJsFile('@web/js/script.js', [
-    'depends' => [\yii\web\JqueryAsset::class]
+// Ajout de mon fichier JS contenant la/les requête(s) Ajax
+$this->registerJsFile("@web/js/script.js", [
+    'depends' => [
+        \yii\web\JqueryAsset::className()
+    ]
 ]);
 
 ?>
@@ -67,6 +69,7 @@ $this->registerJsFile('@web/js/script.js', [
     ]);
     NavBar::end();
     ?>
+
 </header>
 
 <main id="main" class="flex-shrink-0" role="main">

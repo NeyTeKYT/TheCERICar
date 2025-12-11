@@ -80,10 +80,12 @@
     background-color: var(--hover);
 }
 
+/* Zone des résultats */
 .results-section {
     margin-top: 40px;
 }
 
+/* Card pour les voyages */
 .voyage-card {
     margin-bottom: 20px;
 }
@@ -97,6 +99,11 @@
 .voyage-card .btn-custom:hover {
     background-color: var(--hover);
     color: white;
+}
+
+/* Bandeau de notification */
+#notification {
+    display: none;
 }
 
 main > .container {

@@ -57,61 +57,69 @@ class SiteController extends Controller {
 
     /**
      * Displays homepage.
-     *
+     * 
      * @return string
      */
     public function actionIndex() {
 
-        // Création d'une instance RechercheForm
         $recherche = new RechercheForm();
-        $resultats = null;
 
-        // Si la recherche a été soumise
-        if($recherche->load(Yii::$app->request->get())) {
-
-            // Si la recherche est valide = pas d'erreurs détectée (voir la méthode rules())
-            if($recherche->validate()) {
-                $resultats = RechercheForm::lancerRecherche(
-                    $recherche->nb_personnes,
-                    false,  // pour le moment on ne traite pas encore les correspondances
-                    $recherche->ville_depart,
-                    $recherche->ville_arrivee
-                );
-            }
-
-        }
-
-        // Affichage de la view
+        // Affichage de la page "pour la première fois" quand l'utilisateur a cliqué sur l'onglet
         return $this->render('index', [
-                'recherche' => $recherche,  // contient la recherche effectuée avec ses informations comme attribut
-                'resultats' => $resultats,  // voyages trouvés ou non qui correspondent à la recherche
+            'recherche' => $recherche,
+            'resultats' => null,
         ]);
+
     }
 
     /**
-     * Requête Ajax pour le formulaire de recherche
+     * Search for available trips corresponding to the research made by the user.
+     * 
+     * @return string
      */
-    public function actionAjaxRecherche() {
-        Yii::$app->response->format = \yii\web\Response::FORMAT_HTML;
+    public function actionRecherche() {
 
         $recherche = new RechercheForm();
+        $resultats = null;
 
-        if($recherche->load(Yii::$app->request->get()) && $recherche->validate()) {
+        // Initialise les attributs de l'instance RechercheForm à partir des valeurs transmises via le formulaire
+        $recherche->load(Yii::$app->request->get(), 'RechercheForm');
 
+        // Si la recherche est valide = pas d'erreurs détectée (voir la méthode rules())
+        if($recherche->validate()) {
             $resultats = RechercheForm::lancerRecherche(
                 $recherche->nb_personnes,
-                false,
+                false,  // pour le moment on ne traite pas encore les correspondances
                 $recherche->ville_depart,
                 $recherche->ville_arrivee
             );
 
-            // retourne seulement le HTML à insérer avec AJAX
-            return $this->renderPartial('_resultats', [
-                'resultats' => $resultats
+            // Gestion de la notification du bandeau
+            if($resultats) {
+                // Messages différents dans la barre de notification selon si un ou plusieurs voyages ont été trouvés
+                if(count($resultats) > 1) $notification = "Plusieurs voyages ont été trouvés correspondants à votre recherche !";
+                else $notification = "Un voyage a été trouvé correspondant à votre recherche !";
+            }
+            else $notification = "Aucun voyage correspondant à votre recherche !";
+
+            // Retourne les données via JSON
+            return $this->asJson([
+                'notification' => $notification,
+                // renderAjax() ne retourne que la vue avec les modifications effectuées
+                'html' => $this->renderAjax('_resultats', [     // les vues partielles sont nommées _resultats.php !
+                    'resultats' => $resultats,
+                    'recherche' => $recherche
+                ])
             ]);
+
         }
 
-        return "Aucun résultat.";
+        return $this->asJson([
+            'notification' => "Recherche invalide !",
+            'html' => "",
+            'errors' => $recherche->getErrors(),
+        ]);
+
     }
 
     /**

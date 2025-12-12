@@ -92,7 +92,13 @@ class Voyage extends ActiveRecord {
      */
     public static function verifierDisponibilite($id, $nb_personnes) {
         $voyage = Voyage::getVoyageById($id);
-        if($voyage->nbplacedispo > 0) if($voyage->nbplacedispo >= $nb_personnes) return true;
+        $reservations = Reservation::getReservationsByVoyageId($id);
+
+        // J'avais oublié de gérer le nombre de réservations déjà effectuées car le seuil est nbplacedispo
+        $nb_reservations = $nb_personnes;
+        foreach($reservations as $reservation) $nb_reservations += $reservation->nbplaceresa;
+        if($voyage->nbplacedispo >= $nb_reservations) return true;
+
         return false;
     }
 
@@ -118,9 +124,15 @@ class Voyage extends ActiveRecord {
         // Calcule le tarif_total pour ce voyage
         $tarif_total = $voyage->tarif * $trajet->distance;
 
+        // Récupération du nombre de réservations
+        $reservations = Reservation::getReservationsByVoyageId($voyage->id);
+        $nb_reservations = 0;
+        foreach($reservations as $reservation) $nb_reservations += $reservation->nbplaceresa;
+
+        $nb_places_dispo = $voyage->nbplacedispo - $nb_reservations;
+
         // Vérifie la disponibilité du voyage
         $available = Voyage::verifierDisponibilite($voyage->id, $recherche->nb_personnes);
-
 
         // Affichage de la ville de départ et d'arrivée
         echo Html::tag('h4', Html::encode($trajet->depart) . ' ➜ ' . Html::encode($trajet->arrivee), ['class' => 'card-title mb-3']);
@@ -136,7 +148,7 @@ class Voyage extends ActiveRecord {
                 echo Html::tag('p', '<strong>Distance : </strong>' . $trajet->distance . ' km', ['class' => 'mb-1']);
 
                 // Affichage du nombre de places disponibles
-                echo Html::tag('p', '<strong>Nombre de places disponibles : </strong>' . Html::encode($voyage->nbplacedispo), ['class' => 'mb-1']);
+                echo Html::tag('p', '<strong>Nombre de places disponibles : </strong>' . Html::encode($nb_places_dispo) . "/" . Html::encode($voyage->nbplacedispo), ['class' => 'mb-1']);
 
                 // Affichage du nombre de bagages par personne
                 echo Html::tag('p', '<strong>Nombre de bagages par personne : </strong>' . Html::encode($voyage->nbbagage), ['class' => 'mb-1']);

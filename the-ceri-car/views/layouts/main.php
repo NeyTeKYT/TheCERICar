@@ -73,13 +73,22 @@ $this->registerJsFile("@web/js/script.js", [
 </header>
 
 <main id="main" class="flex-shrink-0" role="main">
+
     <div class="container">
         <?php if (!empty($this->params['breadcrumbs'])): ?>
             <?= Breadcrumbs::widget(['links' => $this->params['breadcrumbs']]) ?>
         <?php endif ?>
         <?= Alert::widget() ?>
+        <?php 
+
+            // Bandeau de notification
+            echo Html::beginTag('div', ['id' => 'notification', 'class' => 'mt-10 text-center alert']);
+            echo Html::endTag('div');
+
+        ?>
         <?= $content ?>
     </div>
+
 </main>
 
 <footer id="footer" class="mt-auto py-3 bg-light">

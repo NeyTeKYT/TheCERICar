@@ -35,7 +35,7 @@ $('#recherche-form').on('submit', function(e) {
         },
 
         error: function() {
-            $('#notification').text('Erreur lors de la requête Ajax');
+            $('#notification').text('Une erreur est survenue.');
         }
 
     });

@@ -13,6 +13,7 @@ use app\models\User;
 use app\models\Voyage;
 use app\models\Reservation;
 use app\models\RechercheForm;
+use app\models\Trajet;
 
 class SiteController extends Controller {
     /**
@@ -95,10 +96,18 @@ class SiteController extends Controller {
             );
 
             // Gestion de la notification du bandeau
-            if($resultats) {
+
+            // Vérification que le trajet entré par l'utilisateur existe dans la BDD
+            $trajet_recherche = Trajet::getTrajet($recherche->ville_depart, $recherche->ville_arrivee);
+            if(!$trajet_recherche) $notification = "Le trajet renseigné est indisponible !";
+
+            else if($resultats) {
                 // Messages différents dans la barre de notification selon si un ou plusieurs voyages ont été trouvés
-                if(count($resultats) > 1) $notification = "Plusieurs voyages ont été trouvés correspondants à votre recherche !";
-                else $notification = "Un voyage a été trouvé correspondant à votre recherche !";
+                $nb_voyages_dispo = 0;
+                foreach($resultats as $voyage) if(Voyage::verifierDisponibilite($voyage->id, $recherche->nb_personnes)) $nb_voyages_dispo++;
+                if($nb_voyages_dispo > 1) $notification = "Plusieurs voyages ont été trouvés correspondants à votre recherche !";
+                else if($nb_voyages_dispo == 1) $notification = "Un voyage a été trouvé correspondant à votre recherche !"; 
+                else $notification = "Tous les voyages disponibles ne permettent pas d'accueillir $recherche->nb_personnes passagers !";
             }
             else $notification = "Aucun voyage correspondant à votre recherche !";
 

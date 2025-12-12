@@ -61,10 +61,6 @@ echo Html::beginTag('div', ['class' => 'site-index']);
 
     echo Html::endTag('div');
 
-    // Bandeau de notification
-    echo Html::beginTag('div', ['id' => 'notification', 'class' => 'text-center alert']);
-    echo Html::endTag('div');
-
     // Div pour l'affichage des résultats
     echo Html::beginTag('div', ['class' => 'container results-section', 'id' => 'resultats']);
     echo Html::endTag('div');

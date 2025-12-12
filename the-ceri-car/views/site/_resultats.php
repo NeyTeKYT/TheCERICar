@@ -12,18 +12,20 @@
         $nb_voyages = count($resultats);
 
         // Affichage du nombre de voyages trouvés
-        echo Html::tag('h3', $nb_voyages . ' voyage' . ($nb_voyages > 1 ? 's' : '') . ' disponible' . ($nb_voyages > 1 ? 's' : '') . ' pour demain (' . $tommorow . ')', ['class' => 'mb-4 text-center']);
+        //echo Html::tag('h3', $nb_voyages . ' voyage' . ($nb_voyages > 1 ? 's' : '') . ' disponible' . ($nb_voyages > 1 ? 's' : '') . ' pour demain (' . $tommorow . ')', ['class' => 'mb-4 text-center']);
 
         // Affichage des voyages trouvés
         foreach($resultats as $voyage) {
-            echo Html::beginTag('div', ['class' => 'card voyage-card shadow-sm mb-4']);
-                echo Html::beginTag('div', ['class' => 'card-body']);
+            if($recherche->nb_personnes <= $voyage->nbplacedispo) {
+                echo Html::beginTag('div', ['class' => 'card voyage-card shadow-sm mb-4']);
+                    echo Html::beginTag('div', ['class' => 'card-body']);
 
-                    // Affiche de la card avec les informations du voyage
-                    Voyage::afficherInformations($voyage, $recherche);
+                        // Affiche de la card avec les informations du voyage
+                        Voyage::afficherInformations($voyage, $recherche);
 
+                    echo Html::endTag('div'); 
                 echo Html::endTag('div'); 
-            echo Html::endTag('div'); 
+            }
         }
 
     }

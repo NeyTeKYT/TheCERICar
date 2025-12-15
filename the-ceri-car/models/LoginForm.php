@@ -27,9 +27,13 @@ class LoginForm extends Model {
     public function rules() {
         return [
             // username and password are both required
-            [['username', 'password'], 'required'],
+            ['username', 'required', 'message' => 'Le pseudo doit être renseigné et ne peut pas être vide.'],
+            ['password', 'required', 'message' => 'Le mot de passe doit être renseigné et ne peut pas être vide.'],
+
             // rememberMe must be a boolean value
             ['rememberMe', 'boolean'],
+
+            // Because there are passwords with a length of 4 (test), adding a rule that requires special characters are useless in this case.
             // password is validated by validatePassword()
             ['password', 'validatePassword'],
         ];

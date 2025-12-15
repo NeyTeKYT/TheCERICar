@@ -5,7 +5,7 @@ $('#recherche-form').on('submit', function(e) {
 
     // "Appel à la méthode $.ajax()"
     $.ajax({
-        url: 'site/recherche', // URL vers l'action dans le controller
+        url: '/site/recherche', // URL vers l'action dans le controller
         type: 'GET',
         data: $(this).serialize(),  // adapte le format JSON en string
 
@@ -41,3 +41,79 @@ $('#recherche-form').on('submit', function(e) {
     });
 
 });
+
+// Soumission du formulaire de connexion
+$('#login-form').on('submit', function(e) {
+
+    e.preventDefault();
+
+    $.ajax({
+        url: '/site/login',
+        type: 'POST',
+        data: $(this).serialize(),
+        dataType: 'json',
+
+        success: function(data) {
+
+            $('#notification')
+                .text(data.notification)
+                .removeClass('alert-success alert-danger')
+                .addClass(data.success ? 'alert-success' : 'alert-danger')
+                .fadeIn();
+
+            // Redirige l'utilisateur vers la page d'accueil au bout de 3 secondes
+            if(data.success) {
+                setTimeout(() => {
+                    window.location.href = '/';
+                }, 3000);
+            }
+
+        },
+
+        error: function() {
+            $('#notification')
+                .text('Erreur serveur.')
+                .addClass('alert-danger')
+                .fadeIn();
+        }
+    });
+});
+
+// Soumission du formulaire d'inscription
+$('#registration-form').on('submit', function(e) {
+
+    e.preventDefault();
+
+    $.ajax({
+        url: '/site/inscription',
+        type: 'POST',
+        data: $(this).serialize(),
+        dataType: 'json',
+
+        success: function(data) {
+
+            $('#notification')
+                .text(data.notification)
+                .removeClass('alert-success alert-danger')
+                .addClass(data.success ? 'alert-success' : 'alert-danger')
+                .fadeIn();
+
+            if (data.success) {
+                setTimeout(() => {
+                    window.location.href = '/';
+                }, 1500);
+            }
+
+            if (data.errors) console.log(data.errors);
+        },
+
+        error: function() {
+            $('#notification')
+                .text('Erreur serveur.')
+                .addClass('alert-danger')
+                .fadeIn();
+        }
+    });
+});
+
+

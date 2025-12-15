@@ -56,11 +56,11 @@ $this->registerJsFile("@web/js/script.js", [
             ['label' => 'Rechercher un voyage', 'url' => ['/site/index']],
             //['label' => 'Test User', 'url' => ['/site/test-user']], // Vue basique pour tester le modèle User et afficher des informations bruts
             Yii::$app->user->isGuest
-                ? ['label' => 'Login', 'url' => ['/site/login']]
+                ? ['label' => 'Connexion', 'url' => ['/site/login']]
                 : '<li class="nav-item">'
                     . Html::beginForm(['/site/logout'])
                     . Html::submitButton(
-                        'Logout (' . Yii::$app->user->identity->username . ')',
+                        'Déconnexion (' . Yii::$app->user->identity->username . ')',
                         ['class' => 'nav-link btn btn-link logout']
                     )
                     . Html::endForm()
@@ -82,7 +82,7 @@ $this->registerJsFile("@web/js/script.js", [
         <?php 
 
             // Bandeau de notification
-            echo Html::beginTag('div', ['id' => 'notification', 'class' => 'mt-10 text-center alert']);
+            echo Html::beginTag('div', ['id' => 'notification', 'class' => 'text-center alert']);
             echo Html::endTag('div');
 
         ?>

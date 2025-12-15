@@ -121,8 +121,9 @@ class Voyage extends ActiveRecord {
         // Récupère l'instance de la voiture qui sera utilisée pour ce voyage
         $voiture = Voiture::getVoitureByIds($voyage->idtypev, $voyage->idmarquev);
 
-        // Calcule le tarif_total pour ce voyage
-        $tarif_total = $voyage->tarif * $trajet->distance;
+        // Calcule le tarif par personne et le tarif total pour ce voyage
+        $tarif_par_personne = $voyage->tarif * $trajet->distance;
+        $tarif_total = $tarif_par_personne * $recherche->nb_personnes;
 
         // Récupération du nombre de réservations
         $reservations = Reservation::getReservationsByVoyageId($voyage->id);
@@ -147,8 +148,14 @@ class Voyage extends ActiveRecord {
                 // Affichage de la distance entre la ville de départ et la ville d'arrivée (en km)
                 echo Html::tag('p', '<strong>Distance : </strong>' . $trajet->distance . ' km', ['class' => 'mb-1']);
 
-                // Affichage du nombre de places disponibles
-                echo Html::tag('p', '<strong>Nombre de places disponibles : </strong>' . Html::encode($nb_places_dispo) . "/" . Html::encode($voyage->nbplacedispo), ['class' => 'mb-1']);
+                // Affichage du nombre de places maximum disponibles dans le véhicule
+                echo Html::tag('p', '<strong>Nombre de places maximum disponibles dans le véhicule : </strong>' . Html::encode($voyage->nbplacedispo), ['class' => 'mb-1']);
+
+                // Affichage du nombre de places réservées 
+                echo Html::tag('p', '<strong>Nombre de places réservées : </strong>' . Html::encode($nb_reservations), ['class' => 'mb-1']);
+
+                // Affichage du nombre de places restantes disponibles 
+                echo Html::tag('p', '<strong>Nombre de places restantes disponibles : </strong>' . Html::encode($nb_places_dispo), ['class' => 'mb-1']);
 
                 // Affichage du nombre de bagages par personne
                 echo Html::tag('p', '<strong>Nombre de bagages par personne : </strong>' . Html::encode($voyage->nbbagage), ['class' => 'mb-1']);
@@ -163,9 +170,11 @@ class Voyage extends ActiveRecord {
                 // Affichage du véhicule utilisé pour ce voyage (marque / type)
                 echo Html::tag('p', '<strong>Véhicule : </strong>' . Html::encode($voiture->marque . ' ' . $voiture->type), ['class' => 'mb-1']);
 
+                // Affichage du prix par personne pour ce voyage 
+                if($recherche->nb_personnes > 1) echo Html::tag('p', '<strong>Tarif par personne : </strong>' . $tarif_par_personne . ' €', ['class' => 'mb-1']);
+
                 // Affichage du prix total pour ce voyage 
-                // Ça ne me paraît pas intéressant d'afficher le tarif par km donc je n'affiche que le tarif total
-                echo Html::tag('p', '<strong>Prix total : </strong>' . $tarif_total . ' €', ['class' => 'mb-1']);
+                echo Html::tag('p', '<strong>Prix total pour ' . $recherche->nb_personnes . ' personnes : </strong>' . $tarif_total . ' €', ['class' => 'mb-1']);
 
                 // Si le voyage a des contraintes spécifiées par le conducteur
                 if(!empty($voyage->contraintes)) echo Html::tag('p', '<strong>Contraintes : </strong>' . Html::encode($voyage->contraintes), ['class' => 'mb-1']);
@@ -177,7 +186,7 @@ class Voyage extends ActiveRecord {
         echo Html::beginTag('div', ['class' => 'mt-3 text-end']);
 
             // Si le voyage est disponible (le nombre de passagers entré par l'utilisateur est inférieur ou égal au nombre de places disponibles pour ce voyage)
-            if($available) echo Html::tag('button', 'Réserver', ['class' => 'btn btn-custom',]);
+            if($available) echo Html::a('Réserver', ['site/reserver', 'id_voyage' => $voyage->id, 'nb_personnes' => $recherche->nb_personnes], ['class' => 'btn btn-success']);
 
             // Sinon affichage d'un bouton rouge non cliquable
             // On pense à la suite pour l'étape 5 qui devra implémenter la réservation d'un voyage
@@ -186,6 +195,92 @@ class Voyage extends ActiveRecord {
         
 
         echo Html::endTag('div'); 
+    }
+
+    /**
+     * Affiche les informations d'un voyage
+     * 
+     * @param voyage Instance de la classe Voyage
+     * @param nb_personnes
+     */
+    public static function afficherInformationsReserver($voyage_id, $nb_personnes) {
+
+        $voyage = Voyage::getVoyageById($voyage_id);
+
+        // Récupération du trajet correspondant au voyage
+        $trajet = Trajet::findTrajetById($voyage->trajet);
+
+        // Calcule la durée (1km = 1 min) du voyage
+        $duree_minutes = Trajet::calculerDuree($trajet->distance);
+
+        // Récupère l'instance du conducteur qui propose ce voyage
+        $conducteur = User::findIdentity($voyage->conducteur);
+
+        // Récupère l'instance de la voiture qui sera utilisée pour ce voyage
+        $voiture = Voiture::getVoitureByIds($voyage->idtypev, $voyage->idmarquev);
+
+        // Calcule le tarif par personne et le tarif total pour ce voyage
+        $tarif_par_personne = $voyage->tarif * $trajet->distance;
+        $tarif_total = $tarif_par_personne * $nb_personnes;
+
+        // Récupération du nombre de réservations
+        $reservations = Reservation::getReservationsByVoyageId($voyage->id);
+        $nb_reservations = 0;
+        foreach($reservations as $reservation) $nb_reservations += $reservation->nbplaceresa;
+
+        $nb_places_dispo = $voyage->nbplacedispo - $nb_reservations;
+
+        // Vérifie la disponibilité du voyage
+        $available = $nb_places_dispo >= $nb_personnes;
+
+        // Affichage de la ville de départ et d'arrivée
+        echo Html::tag('h4', Html::encode($trajet->depart) . ' ➜ ' . Html::encode($trajet->arrivee), ['class' => 'card-title mb-3']);
+
+        echo Html::beginTag('div', ['class' => 'row']);
+
+            echo Html::beginTag('div', ['class' => 'col-md-6']);
+
+                // Affichage de l'heure de départ
+                echo Html::tag('p', '<strong>Heure de départ : </strong>' . Html::encode($voyage->heuredepart) . 'h', ['class' => 'mb-1']);
+
+                // Affichage de la distance entre la ville de départ et la ville d'arrivée (en km)
+                echo Html::tag('p', '<strong>Distance : </strong>' . $trajet->distance . ' km', ['class' => 'mb-1']);
+
+                // Affichage du nombre de places maximum disponibles dans le véhicule
+                echo Html::tag('p', '<strong>Nombre de places maximum disponibles dans le véhicule : </strong>' . Html::encode($voyage->nbplacedispo), ['class' => 'mb-1']);
+
+                // Affichage du nombre de places réservées 
+                echo Html::tag('p', '<strong>Nombre de places réservées : </strong>' . Html::encode($nb_reservations), ['class' => 'mb-1']);
+
+                // Affichage du nombre de places restantes disponibles 
+                echo Html::tag('p', '<strong>Nombre de places restantes disponibles : </strong>' . Html::encode($nb_places_dispo), ['class' => 'mb-1']);
+
+                // Affichage du nombre de bagages par personne
+                echo Html::tag('p', '<strong>Nombre de bagages par personne : </strong>' . Html::encode($voyage->nbbagage), ['class' => 'mb-1']);
+
+            echo Html::endTag('div');
+
+            echo Html::beginTag('div', ['class' => 'col-md-6']);
+
+                // Affichage du nom / prénom du conducteur qui propose ce voyage
+                echo Html::tag('p', '<strong>Conducteur : </strong>' . Html::encode($conducteur->nom . ' ' . $conducteur->prenom), ['class' => 'mb-1']);
+
+                // Affichage du véhicule utilisé pour ce voyage (marque / type)
+                echo Html::tag('p', '<strong>Véhicule : </strong>' . Html::encode($voiture->marque . ' ' . $voiture->type), ['class' => 'mb-1']);
+
+                // Affichage du prix par personne pour ce voyage 
+                if($nb_personnes > 1) echo Html::tag('p', '<strong>Tarif par personne : </strong>' . $tarif_par_personne . ' €', ['class' => 'mb-1']);
+
+                // Affichage du prix total pour ce voyage 
+                echo Html::tag('p', '<strong>Prix total pour ' . $nb_personnes . ' personnes : </strong>' . $tarif_total . ' €', ['class' => 'mb-1']);
+
+                // Si le voyage a des contraintes spécifiées par le conducteur
+                if(!empty($voyage->contraintes)) echo Html::tag('p', '<strong>Contraintes : </strong>' . Html::encode($voyage->contraintes), ['class' => 'mb-1']);
+
+            echo Html::endTag('div'); 
+
+        echo Html::endTag('div'); 
+ 
     }
 
     // modifierTarif($tarif)

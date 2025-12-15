@@ -6,6 +6,7 @@ use Yii;
 use yii\filters\AccessControl;
 use yii\web\Controller;
 use yii\web\Response;
+use yii\db\Query;
 use yii\filters\VerbFilter;
 use app\models\LoginForm;
 use app\models\ContactForm;
@@ -14,6 +15,7 @@ use app\models\Voyage;
 use app\models\Reservation;
 use app\models\RechercheForm;
 use app\models\Trajet;
+use app\models\RegistrationForm;
 
 class SiteController extends Controller {
     /**
@@ -132,25 +134,131 @@ class SiteController extends Controller {
     }
 
     /**
+     * Allows the user to get an access to the view corresponding to the trip booking or else is redirected to the login form.
+     */
+    public function actionReserver($id_voyage, $nb_personnes) {
+
+        // Si l'utilisateur n'est pas connecté, alors il est redirigé vers le formulaire de connexion puis sera redirigé vers la page pour réserver le voyage
+        if(Yii::$app->user->isGuest) {
+            Yii::$app->user->setReturnUrl(Yii::$app->request->url);
+            return $this->redirect(['site/login']);
+        }
+
+        // Récupération de l'instance voyage
+        $voyage = Voyage::findOne($id_voyage);
+
+        // Si le voyage n'existe pas = gestion de l'id_voyage car on ne peut pas faire confiance au client !
+        if(!$voyage) throw new \yii\web\NotFoundHttpException('Voyage innexistant.');
+
+        // Vérifie la disponibilité du voyage en fonction du nombre de personnes
+        if(!Voyage::verifierDisponibilite($voyage->id, $nb_personnes)) {
+            Yii::$app->session->setFlash('error', 'Plus assez de places disponibles.');
+            return $this->redirect(['site/index']);
+        }
+
+        return $this->render('reserver', [
+            'voyage' => $voyage,
+            'nb_personnes' => $nb_personnes,
+        ]);
+    }
+
+    public function actionConfirmerReservation() {
+        if(Yii::$app->user->isGuest) return $this->redirect(['site/login']);
+
+        $voyageId = Yii::$app->request->post('voyage_id');
+        $nb = Yii::$app->request->post('nb');
+
+        $reservation = new Reservation();
+        $reservation->user_id = Yii::$app->user->id;
+        $reservation->voyage_id = $voyageId;
+        $reservation->nb_personnes = $nb;
+        $reservation->date_reservation = date('Y-m-d H:i:s');
+
+        if($reservation->save()) {
+            Yii::$app->session->setFlash('success', 'Réservation confirmée 🎉');
+            return $this->redirect(['site/test-user', 'pseudo' => Yii::$app->user->identity->username]);
+        }
+
+        Yii::$app->session->setFlash('error', 'Erreur lors de la réservation.');
+        return $this->redirect(['site/index']);
+    }
+
+
+    /**
      * Login action.
      *
      * @return Response|string
      */
     public function actionLogin() {
-        if (!Yii::$app->user->isGuest) {
-            return $this->goHome();
-        }
+        if(!Yii::$app->user->isGuest) return $this->goHome();
 
         $model = new LoginForm();
-        if ($model->load(Yii::$app->request->post()) && $model->login()) {
-            return $this->goBack();
+
+        if($model->load(Yii::$app->request->post())) {
+
+            if($model->login()) {
+
+                if(Yii::$app->request->isAjax) {
+                    return $this->asJson([
+                        'success' => true,
+                        'notification' => "Connexion réussie ! Vous allez être automatiquement redirigé vers la page d'accueil.",
+                    ]);
+                }
+
+                return $this->goBack();
+            }
+
+            // Erreur de login
+            if (Yii::$app->request->isAjax) {
+                return $this->asJson([
+                    'success' => false,
+                    'notification' => "Identifiants incorrects.",
+                    'errors' => $model->getErrors(),
+                ]);
+            }
         }
 
-        $model->password = '';
         return $this->render('login', [
             'model' => $model,
         ]);
     }
+
+    /**
+     * Registration action
+     * 
+     * @return Response|string
+     */
+    public function actionInscription() {
+        if(!Yii::$app->user->isGuest) return $this->goHome();
+
+        $model = new RegistrationForm();
+
+        if($model->load(Yii::$app->request->post())) {
+
+            if($model->register()) {
+
+                if(Yii::$app->request->isAjax) {
+                    return $this->asJson([
+                        'success' => true,
+                        'notification' => "Compte créé avec succès 🎉",
+                    ]);
+                }
+
+                return $this->goHome();
+            }
+
+            if(Yii::$app->request->isAjax) {
+                return $this->asJson([
+                    'success' => false,
+                    'notification' => "Erreur lors de l’inscription.",
+                    'errors' => $model->getErrors(),
+                ]);
+            }
+        }
+
+        return $this->render('inscription', ['model' => $model]);
+    }
+
 
     /**
      * Logout action.

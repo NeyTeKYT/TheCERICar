@@ -137,8 +137,6 @@ class User extends \yii\base\BaseObject implements \yii\web\IdentityInterface {
 
     }
 
-    // creerUnCompte()
-
     // modifierPrenom($id, $prenom)
 
     // modifierNom($id, $nom)

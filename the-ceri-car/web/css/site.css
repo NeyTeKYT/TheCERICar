@@ -71,13 +71,14 @@
     width: 250px;   
 }
 
-.search-form .btn-custom {
+.btn-custom {
     background-color: var(--primary);
     color: white;
 }
 
-.search-form .btn-custom:hover {
+.btn-custom:hover {
     background-color: var(--hover);
+    color: white;
 }
 
 /* Zone des résultats */
@@ -104,6 +105,7 @@
 /* Bandeau de notification */
 #notification {
     display: none;
+    margin: 10px 0;
 }
 
 main > .container {

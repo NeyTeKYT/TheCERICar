@@ -27,7 +27,6 @@ echo Html::beginTag('div', ['class' => 'site-index']);
         // Création d'un formulaire en utilisant la classe RechercheForm
         $form = ActiveForm::begin([
             'id' => 'recherche-form',   // <form id='recherche-form'></form>
-            //'method' => 'get',  // méthode GET pour le formulaire
             'method' => 'get',
             'options' => ['class' => 'search-form d-flex flex-wrap gap-3 justify-content-center'], // <form class="..."></form>
             'fieldConfig' => [

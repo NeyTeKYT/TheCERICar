@@ -10,10 +10,8 @@ use yii\base\Model;
  */
 class RechercheForm extends Model {
 
-    // Champs qui définissent une recherche
     public $nb_personnes;
     public $correspondances;    // boolean
-    // Attributs qui proviennent de la table "Trajet"
     public $ville_depart;
     public $ville_arrivee;
 
@@ -42,7 +40,8 @@ class RechercheForm extends Model {
             ['nb_personnes', 'integer', 'min' => 1, 'max' => 10, 
             'tooSmall' => 'Le nombre de personnes doit être au minimum 1.', 
             'tooBig' => 'Le nombre de personnes ne peut pas dépasser 10.',
-            'message' => 'Le nombre de personnes doit être un nombre entier.'],
+            'message' => 'Le nombre de personnes doit être un nombre entier.'
+            ],
 
         ];
     }
@@ -50,10 +49,10 @@ class RechercheForm extends Model {
     /**
      * Lance une recherche à partir des informations 
      * 
-     * @param nb_personnes Nombre de personnes
-     * @param correspondances Si l'utilisateur accepte des voyages avec correspondance
-     * @param ville_depart Ville de départ du voyage
-     * @param ville_arrivee Ville d'arrivée du voyage
+     * @param int Nombre de personnes
+     * @param bool Si l'utilisateur accepte des voyages avec correspondance
+     * @param string Ville de départ du voyage
+     * @param string Ville d'arrivée du voyage
      * @return Voyage[]|null
      */
     public static function lancerRecherche($nb_personnes, $correspondances, $ville_depart, $ville_arrivee) {

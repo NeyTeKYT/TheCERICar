@@ -11,7 +11,7 @@ use yii\bootstrap5\Html;
 $this->title = 'Formulaire de connexion';
 //$this->params['breadcrumbs'][] = $this->title;
 
-echo Html::beginTag('div', ['class' => 'site-login']);
+echo Html::beginTag('div');
 
     echo Html::beginTag('div', ['class' => 'jumbotron text-center bg-transparent mt-5 mb-5']);
 

@@ -26,12 +26,13 @@ class Reservation extends ActiveRecord {
      * Récupère toutes les réservations à partir de l'ID du voyage
      * 
      * @param id_voyage $id_voyage l'ID du voyage
-     * @return Voyage[]|null
+     * @return Voyage[]
      */
     public static function getReservationsByVoyageId($id_voyage) {
         $reservations = Reservation::find()->where(['voyage' => $id_voyage])->all();
-        if($reservations) return $reservations;
-        else return null;
+        /*if($reservations) return $reservations;
+        else return null;*/
+        return $reservations;
     }
 
     /**

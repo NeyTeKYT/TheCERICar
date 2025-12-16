@@ -41,7 +41,7 @@ echo Html::beginTag('div', ['class' => 'site-reserver']);
 
             echo Html::hiddenInput('nb', $nb_personnes);
 
-            echo Html::submitButton('Confirmer la réservation',['class' => 'btn btn-success btn-lg']);
+            echo Html::submitButton('Confirmer la réservation', ['class' => 'btn btn-success btn-lg']);
         
         echo Html::endForm();
 

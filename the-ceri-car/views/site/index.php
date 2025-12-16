@@ -1,18 +1,13 @@
 <?php
 
-/** @var yii\web\View $this */
-/** @var yii\bootstrap5\ActiveForm $form */
-
-/** @var app\models\LoginForm $recherche */
-
 use yii\bootstrap5\ActiveForm;
 use app\models\Voyage;
 use yii\helpers\Html;
 
+// Titre de la page dans l'onglet
 $this->title = 'Rechercher un voyage';
-/*$this->params['breadcrumbs'][] = $this->title;*/  // affiche le chemin dans l'arborescence du site
 
-echo Html::beginTag('div', ['class' => 'site-index']);
+echo Html::beginTag('div');
 
     echo Html::beginTag('div', ['class' => 'jumbotron text-center bg-transparent mt-5 mb-5']);
 
@@ -26,7 +21,7 @@ echo Html::beginTag('div', ['class' => 'site-index']);
 
         // Création d'un formulaire en utilisant la classe RechercheForm
         $form = ActiveForm::begin([
-            'id' => 'recherche-form',   // <form id='recherche-form'></form>
+            'id' => 'recherche-form',   // <form id='recherche-form'>
             'method' => 'get',
             'options' => ['class' => 'search-form d-flex flex-wrap gap-3 justify-content-center'], // <form class="..."></form>
             'fieldConfig' => [

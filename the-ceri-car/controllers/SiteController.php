@@ -16,6 +16,7 @@ use app\models\Reservation;
 use app\models\RechercheForm;
 use app\models\Trajet;
 use app\models\RegistrationForm;
+use app\models\ProposerForm;
 
 class SiteController extends Controller {
     /**
@@ -147,9 +148,6 @@ class SiteController extends Controller {
         // Récupération de l'instance voyage
         $voyage = Voyage::findOne($id_voyage);
 
-        // Si le voyage n'existe pas = gestion de l'id_voyage car on ne peut pas faire confiance au client !
-        if(!$voyage) throw new \yii\web\NotFoundHttpException('Voyage innexistant.');
-
         // Vérifie la disponibilité du voyage en fonction du nombre de personnes
         if(!Voyage::verifierDisponibilite($voyage->id, $nb_personnes)) {
             Yii::$app->session->setFlash('error', 'Plus assez de places disponibles.');
@@ -169,20 +167,67 @@ class SiteController extends Controller {
         $nb = Yii::$app->request->post('nb');
 
         $reservation = new Reservation();
-        $reservation->user_id = Yii::$app->user->id;
-        $reservation->voyage_id = $voyageId;
-        $reservation->nb_personnes = $nb;
-        $reservation->date_reservation = date('Y-m-d H:i:s');
+        $reservation->voyageur = Yii::$app->user->id;
+        $reservation->voyage = $voyageId;
+        $reservation->nbplaceresa = $nb;
 
         if($reservation->save()) {
             Yii::$app->session->setFlash('success', 'Réservation confirmée 🎉');
-            return $this->redirect(['site/test-user', 'pseudo' => Yii::$app->user->identity->username]);
+            return $this->redirect(['site/index', 'pseudo' => Yii::$app->user->identity->username]);
         }
 
         Yii::$app->session->setFlash('error', 'Erreur lors de la réservation.');
         return $this->redirect(['site/index']);
     }
 
+    public function actionProposer() {
+
+        // Création du model pour représenter le formulaire avec les champs entrés par l'utilisateur
+        $model = new ProposerForm();
+
+        // Gestion de la requête Ajax POST
+        if(Yii::$app->request->isAjax && $model->load(Yii::$app->request->post())) {
+
+            Yii::$app->response->format = Response::FORMAT_JSON;
+
+            if($model->proposerVoyage(Yii::$app->user->id)) {
+                return [
+                    'success' => true,
+                    'notification' => "Voyage publié ! Vous allez être automatiquement redirigé vers la page d'accueil.",
+                ];
+            } else {
+                return [
+                    'success' => false,
+                    'notification' => 'Une erreur est survenue. Veuillez réessayer ultérieurement.',
+                    'errors' => $model->getErrors(),
+                ];
+            }
+        }
+
+        // Pour un affichage classique si jamais la page est chargée directement
+        return $this->render('proposer', [
+            'model' => $model,
+        ]);
+    }
+
+    public function actionMesVoyages() {
+
+        // Redirige l'utilisateur vers la page de connexion s'il tente d'accéder à cette page alors qu'il n'est pas connecté
+        if(Yii::$app->user->isGuest) return $this->redirect(['site/login']);
+
+        // Récupération des voyages proposés par l'utilisateur
+        $voyages = Voyage::findVoyagesByUserId(Yii::$app->user->id);
+
+        // Sécurité supplémentaire : pas de voyages → redirection
+        if(empty($voyages)) {
+            Yii::$app->session->setFlash('error', "Vous n'avez encore proposé aucun voyage.");
+            return $this->redirect(['site/index']);
+        }
+
+        return $this->render('mes-voyages', [
+            'voyages' => $voyages,
+        ]);
+    }
 
     /**
      * Login action.
@@ -212,7 +257,7 @@ class SiteController extends Controller {
             if (Yii::$app->request->isAjax) {
                 return $this->asJson([
                     'success' => false,
-                    'notification' => "Identifiants incorrects.",
+                    'notification' => "Vos identifiants sont incorrects.",
                     'errors' => $model->getErrors(),
                 ]);
             }
@@ -240,7 +285,7 @@ class SiteController extends Controller {
                 if(Yii::$app->request->isAjax) {
                     return $this->asJson([
                         'success' => true,
-                        'notification' => "Compte créé avec succès 🎉",
+                        'notification' => "Inscription réussie ! Vous allez être automatiquement redirigé vers la page d'accueil.",
                     ]);
                 }
 

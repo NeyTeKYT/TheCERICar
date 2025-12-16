@@ -9,6 +9,7 @@ use yii\bootstrap5\Breadcrumbs;
 use yii\bootstrap5\Html;
 use yii\bootstrap5\Nav;
 use yii\bootstrap5\NavBar;
+use app\models\Voyage;
 
 AppAsset::register($this);
 
@@ -43,34 +44,56 @@ $this->registerJsFile("@web/js/script.js", [
 <body class="d-flex flex-column h-100">
 <?php $this->beginBody() ?>
 
+<!-- Barre de navigation -->
 <header id="header">
     <?php
-    NavBar::begin([
-        'brandLabel' => Yii::$app->name,
-        'brandUrl' => Yii::$app->homeUrl,
-        'options' => ['class' => 'navbar-expand-md navbar-light navbar-custom fixed-top']
-    ]);
-    echo Nav::widget([
-        'options' => ['class' => 'navbar-nav'],
-        'items' => [
-            ['label' => 'Rechercher un voyage', 'url' => ['/site/index']],
-            //['label' => 'Test User', 'url' => ['/site/test-user']], // Vue basique pour tester le modèle User et afficher des informations bruts
-            Yii::$app->user->isGuest
-                ? ['label' => 'Connexion', 'url' => ['/site/login']]
-                : '<li class="nav-item">'
-                    . Html::beginForm(['/site/logout'])
-                    . Html::submitButton(
-                        'Déconnexion (' . Yii::$app->user->identity->username . ')',
-                        ['class' => 'nav-link btn btn-link logout']
-                    )
-                    . Html::endForm()
-                    . '</li>'
-        ]
-    ]);
-    NavBar::end();
-    ?>
 
+        NavBar::begin([
+            'brandLabel' => Yii::$app->name,
+            'brandUrl' => Yii::$app->homeUrl,
+            'options' => ['class' => 'navbar-expand-md navbar-light navbar-custom fixed-top']
+        ]);
+
+        // La recherche d'un voyage est autorisée pour tous les clients 
+        $items = [
+            ['label' => 'Rechercher un voyage', 'url' => ['/site/index']],
+        ];
+
+        // Si l'utilisateur est connecté et a un permis 
+        if (!Yii::$app->user->isGuest && !empty(Yii::$app->user->identity->permis)) {
+
+            // Alors il est en mesure de proposer un voyage
+            $items[] = ['label' => 'Proposer un voyage', 'url' => ['/site/proposer']];
+
+            $voyages = Voyage::findVoyagesByUserId(Yii::$app->user->id);
+            if(!empty($voyages)) $items[] = ['label' => 'Mes voyages', 'url' => ['/site/mes-voyages']];
+
+        }
+
+        // Connexion / Déconnexion
+        if (Yii::$app->user->isGuest) $items[] = ['label' => 'Authentification', 'url' => ['/site/login']];
+        else {
+            $items[] =
+                '<li class="nav-item">'
+                . Html::beginForm(['/site/logout'])
+                . Html::submitButton(
+                    'Déconnexion (' . Yii::$app->user->identity->username . ')',
+                    ['class' => 'nav-link btn btn-link logout']
+                )
+                . Html::endForm()
+                . '</li>';
+        }
+
+        echo Nav::widget([
+            'options' => ['class' => 'navbar-nav'],
+            'items' => $items,
+        ]);
+
+        NavBar::end();
+
+    ?>
 </header>
+
 
 <main id="main" class="flex-shrink-0" role="main">
 

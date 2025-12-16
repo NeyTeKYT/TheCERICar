@@ -3,11 +3,10 @@ $('#recherche-form').on('submit', function(e) {
 
     e.preventDefault(); // Empêche de recharger entièrement la page (= contradictoire avec Ajax)
 
-    // "Appel à la méthode $.ajax()"
     $.ajax({
         url: '/site/recherche', // URL vers l'action dans le controller
         type: 'GET',
-        data: $(this).serialize(),  // adapte le format JSON en string
+        data: $(this).serialize(),  // Adapte le format JSON en string
 
         /* J'ai choisi JSON au lieu d'un renderPartial avec HTML car JSON est un format de données structurées en paires clé/valeur, 
         utilisé pour l'échange d'informations entre navigateurs et serveurs */
@@ -25,17 +24,18 @@ $('#recherche-form').on('submit', function(e) {
                         ? 'alert-success' 
                         : 'alert-danger'
                 )
-                .fadeIn();  // permet d'arriver de manière smooth (proposé par Jquery)
+                .fadeIn();  // Permet au bandeau de notification d'arriver de manière smooth (proposé par JQuery)
 
             // Mise à jour des résultats obtenus
             $('#resultats').html(data.html);
 
-            if(data.errors) console.log(data.errors);   // affichage des erreurs dans la console
-
         },
 
         error: function() {
-            $('#notification').text('Une erreur est survenue.');
+            $('#notification')
+            .text('Une erreur est survenue. Veuillez réessayer ultérieurement.')
+            .addClass('alert-danger')
+            .fadeIn();
         }
 
     });
@@ -45,34 +45,35 @@ $('#recherche-form').on('submit', function(e) {
 // Soumission du formulaire de connexion
 $('#login-form').on('submit', function(e) {
 
-    e.preventDefault();
+    e.preventDefault(); // Empêche de recharger entièrement la page (= contradictoire avec Ajax)
 
     $.ajax({
-        url: '/site/login',
+        url: '/site/login', // URL vers l'action dans le controller
         type: 'POST',
         data: $(this).serialize(),
-        dataType: 'json',
+        dataType: 'json',   // Adapte le format JSON en string
 
         success: function(data) {
 
+            // Mise à jour du contenu du bandeau de notification
             $('#notification')
                 .text(data.notification)
                 .removeClass('alert-success alert-danger')
                 .addClass(data.success ? 'alert-success' : 'alert-danger')
-                .fadeIn();
+                .fadeIn();  // Permet au bandeau de notification d'arriver de manière smooth (proposé par JQuery)
 
             // Redirige l'utilisateur vers la page d'accueil au bout de 3 secondes
             if(data.success) {
                 setTimeout(() => {
-                    window.location.href = '/';
-                }, 3000);
+                    window.location.href = '/site/index';
+                }, 5000);
             }
 
         },
 
         error: function() {
             $('#notification')
-                .text('Erreur serveur.')
+                .text('Une erreur est survenue. Veuillez réessayer ultérieurement.')
                 .addClass('alert-danger')
                 .fadeIn();
         }
@@ -82,34 +83,73 @@ $('#login-form').on('submit', function(e) {
 // Soumission du formulaire d'inscription
 $('#registration-form').on('submit', function(e) {
 
-    e.preventDefault();
+    e.preventDefault(); // Empêche de recharger entièrement la page (= contradictoire avec Ajax)
 
     $.ajax({
-        url: '/site/inscription',
+        url: '/site/inscription',   // URL vers l'action dans le controller
         type: 'POST',
         data: $(this).serialize(),
-        dataType: 'json',
+        dataType: 'json',   // Adapte le format JSON en string
 
         success: function(data) {
 
+            // Mise à jour du contenu du bandeau de notification
             $('#notification')
                 .text(data.notification)
                 .removeClass('alert-success alert-danger')
                 .addClass(data.success ? 'alert-success' : 'alert-danger')
-                .fadeIn();
+                .fadeIn();  // Permet au bandeau de notification d'arriver de manière smooth (proposé par JQuery)
 
             if (data.success) {
                 setTimeout(() => {
-                    window.location.href = '/';
-                }, 1500);
+                    window.location.href = '/site/index';
+                }, 5000);
             }
 
-            if (data.errors) console.log(data.errors);
         },
 
         error: function() {
             $('#notification')
-                .text('Erreur serveur.')
+                .text('Une erreur est survenue. Veuillez réessayer ultérieurement.')
+                .addClass('alert-danger')
+                .fadeIn();
+        }
+    });
+});
+
+// Soumission du formulaire pour proposer un voyage
+$('#proposer-form').on('submit', function(e) {
+
+    e.preventDefault(); // Empêche de recharger entièrement la page (= contradictoire avec Ajax)
+
+    $.ajax({
+        url: '/site/proposer',   // URL vers l'action dans le controller
+        type: 'POST',
+        data: $(this).serialize(),
+        dataType: 'json',   // Adapte le format JSON en string
+
+        success: function(data) {
+
+            // Mise à jour du contenu du bandeau de notification
+            $('#notification')
+                .text(data.notification)
+                .removeClass('alert-success alert-danger')
+                .addClass('alert-success')
+                .fadeIn();  // Permet au bandeau de notification d'arriver de manière smooth (proposé par JQuery)
+
+            if(data.success) {
+                $('#proposer-form')[0].reset(); // Réinitialise les champs du formulaire
+                 $('html, body').animate({ scrollTop: 0 }, 'fast'); // Remonte tout en haut pour pouvoir voir le bandeau
+                setTimeout(() => {
+                    window.location.href = '/site/index';
+                }, 5000);
+            }
+
+        },
+
+        error: function() {
+            $('#notification')
+                .text('Une erreur est survenue. Veuillez réessayer ultérieurement.')
                 .addClass('alert-danger')
                 .fadeIn();
         }

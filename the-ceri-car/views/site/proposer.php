@@ -8,7 +8,7 @@
     use app\models\MarqueVehicule;
 
     // Titre de la page dans l'onglet
-    $this->title = 'Proposer un voyage';
+    $this->title = $model->voyage_id ? 'Modifier un voyage' : 'Proposer un voyage';
 
     echo Html::beginTag('div');
 
@@ -16,7 +16,8 @@
 
             // Affichage du titre de la page avec un slogan
             echo Html::tag('h1', Html::encode($this->title));
-            echo Html::tag('p', 'Proposez un voyages empruntables par les autres utilisateurs.', ['class' => 'lead']);
+            if($model->voyage_id) echo Html::tag('p', 'Modifiez un voyages empruntables par les autres utilisateurs.', ['class' => 'lead']);
+            else echo Html::tag('p', 'Proposez un voyages empruntables par les autres utilisateurs.', ['class' => 'lead']);
 
         echo Html::endTag('div');
 
@@ -24,8 +25,9 @@
 
             // Création d'un formulaire en utilisant la classe ProposerVoyageForm
             $form = ActiveForm::begin([
-                'id' => 'proposer-form',    // <form id='proposer-form'>
+                'id' => 'proposer-voyage',    // <form id='proposer-voyage'>
                 'method' => 'post',
+                'action' => $model->voyage_id ? ['site/modifier-voyage', 'id' => $model->voyage_id] : ['site/proposer'],
                 'options' => ['class' => 'search-form d-flex flex-column flex-wrap gap-3 justify-content-center'], // <form class="...">
                 'fieldConfig' => [
                     'template' => "{input}\n{error}",   // input puis les erreurs en dessous si elles sont détectées
@@ -34,13 +36,30 @@
                 ],
             ]);
 
+            // Champ caché pour fournir l'ID du voyage
+            echo $form->field($model, 'voyage_id')->hiddenInput()->label(false);
+
             // Champ pour sélectionner le trajet parmi tous les trajets disponibles dans la table de la BDD
-            echo $form->field($model, 'trajet')->dropDownList(ArrayHelper::map(
-                Trajet::find()->all(), 'id', 
-                function($trajet) {
-                    return $trajet->depart . ' → ' . $trajet->arrivee;
-                }
-            ), ['prompt' => 'Choisir un trajet', 'autofocus' => true]);
+            if($model->voyage_id) {
+
+                echo $form->field($model, 'trajet')->dropDownList(ArrayHelper::map(
+                    Trajet::find()->all(), 'id', 
+                    function($trajet) {
+                        return $trajet->depart . ' → ' . $trajet->arrivee;
+                    }
+                ), ['disabled' => true]);
+
+            }
+            else {
+
+                echo $form->field($model, 'trajet')->dropDownList(ArrayHelper::map(
+                    Trajet::find()->all(), 'id', 
+                    function($trajet) {
+                        return $trajet->depart . ' → ' . $trajet->arrivee;
+                    }
+                ), ['prompt' => 'Choisir un trajet', 'autofocus' => true]);
+
+            }
 
             // Champ pour l'heure de départ
             echo $form->field($model, 'heuredepart')->input('number', ['placeholder' => "Heure de départ"]);  // L'heure doit être un nombre entier
@@ -70,7 +89,7 @@
             echo $form->field($model, 'contraintes')->textarea(['placeholder' => "Contraintes"]);
 
             // Bouton pour proposer le voyage
-            echo Html::submitButton('Proposer le voyage', ['id' => 'btn-search', 'class' => 'btn btn-custom px-4 w-100']);
+            echo Html::submitButton($model->voyage_id ? 'Modifier le voyage' : 'Proposer le voyage', ['class' => 'btn btn-custom w-100']);
 
             ActiveForm::end();
 

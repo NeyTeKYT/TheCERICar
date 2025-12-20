@@ -10,6 +10,7 @@ use yii\bootstrap5\Html;
 use yii\bootstrap5\Nav;
 use yii\bootstrap5\NavBar;
 use app\models\Voyage;
+use app\models\Reservation;
 
 AppAsset::register($this);
 
@@ -49,33 +50,47 @@ $this->registerJsFile("@web/js/script.js", [
     <?php
 
         NavBar::begin([
+            // Titre de l'application web
             'brandLabel' => Yii::$app->name,
             'brandUrl' => Yii::$app->homeUrl,
-            'options' => ['class' => 'navbar-expand-md navbar-light navbar-custom fixed-top']
+            'options' => ['class' => 'navbar navbar-expand-md navbar-light navbar-custom fixed-top']
         ]);
 
-        // La recherche d'un voyage est autorisée pour tous les clients 
-        $items = [
-            ['label' => 'Rechercher un voyage', 'url' => ['/site/index']],
-        ];
+        // Affichage de l'onglet "Rechercher un voyage" disponible pour n'importe quel utilisateur = page d'accueil
+        $items = [['label' => 'Rechercher un voyage', 'url' => ['/site/index']],];
 
-        // Si l'utilisateur est connecté et a un permis 
-        if (!Yii::$app->user->isGuest && !empty(Yii::$app->user->identity->permis)) {
-
-            // Alors il est en mesure de proposer un voyage
-            $items[] = ['label' => 'Proposer un voyage', 'url' => ['/site/proposer']];
-
-            $voyages = Voyage::findVoyagesByUserId(Yii::$app->user->id);
-            if(!empty($voyages)) $items[] = ['label' => 'Mes voyages', 'url' => ['/site/mes-voyages']];
-
-        }
-
-        // Connexion / Déconnexion
+        // Affichage de l'onglet "Connexion" si il n'est pas connecté
+        // Ou si il est connecté, affichage de l'onglet "Déconnexion (pseudo)" pour se déconnecter
         if (Yii::$app->user->isGuest) $items[] = ['label' => 'Authentification', 'url' => ['/site/login']];
+
+        // Sinon, alors l'utilisateur est connecté et peut se déconnecter via l'onglet "Déconnexion (son pseudo)"
         else {
+
+            // Page pour voir et modifier les informations de l'utilisateur connecté
+            $items[] = ['label' => 'Mon compte', 'url' => ['/site/mon-compte']];
+
+            $reservations = Reservation::findReservationsByUserId(Yii::$app->user->id); // Récupération des réservations de l'utilisateur
+            // Affichage la page "Mes réservations" si il en a effectué au moins une
+            if(!empty($reservations)) $items[] = ['label' => 'Mes réservations', 'url' => ['/site/mes-reservations']];
+
+            // Si l'utilisateur a renseigné son permis 
+            if(!empty(Yii::$app->user->identity->permis)) {
+                
+                $items[] = ['label' => 'Proposer un voyage', 'url' => ['/site/proposer']];  // Alors il peut proposer un voyage
+
+                $voyages = Voyage::findVoyagesByUserId(Yii::$app->user->id);    // Récupérations des voyages proposés par l'utilisateur connecté
+                if(!empty($voyages)) $items[] = ['label' => 'Mes voyages', 'url' => ['/site/mes-voyages']];
+
+            }
+
+            // Bouton pour se déconnecter de l'application web
             $items[] =
                 '<li class="nav-item">'
-                . Html::beginForm(['/site/logout'])
+                . Html::beginForm(
+                    ['/site/logout'],
+                    'post',
+                    ['id' => 'logout-form']
+                )
                 . Html::submitButton(
                     'Déconnexion (' . Yii::$app->user->identity->username . ')',
                     ['class' => 'nav-link btn btn-link logout']
@@ -105,7 +120,7 @@ $this->registerJsFile("@web/js/script.js", [
         <?php 
 
             // Bandeau de notification
-            echo Html::beginTag('div', ['id' => 'notification', 'class' => 'text-center alert']);
+            echo Html::beginTag('div', ['id' => 'notification', 'class' => 'text-center alert', 'style' => 'display:none;']);
             echo Html::endTag('div');
 
         ?>

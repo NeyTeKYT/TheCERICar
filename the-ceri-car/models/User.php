@@ -4,7 +4,7 @@ namespace app\models;
 
 class User extends \yii\base\BaseObject implements \yii\web\IdentityInterface {
     
-    // Attributs de la table "Internaute" (fredouil.internaute)
+    // Attributs de la table "Internaute"
     public $id;
     public $username;
     public $password;
@@ -15,7 +15,10 @@ class User extends \yii\base\BaseObject implements \yii\web\IdentityInterface {
     public $permis;
 
     /**
-     * {@inheritdoc}
+     * Récupère un internaute dans la BDD grâce à son ID.
+     * 
+     * @param int $id ID de l'utilisateur (clé primaire)
+     * @return Internaute|null
      */
     public static function findIdentity($id) {
         $internaute = Internaute::findOne($id);
@@ -35,17 +38,17 @@ class User extends \yii\base\BaseObject implements \yii\web\IdentityInterface {
     }
 
     /**
-     * {@inheritdoc}
+     * Je n'utiliserai pas cette méthode mais elle a besoin d'être déclarée.
      */
     public static function findIdentityByAccessToken($token, $type = null) {
-        return null;    // Je n'utiliserai pas cette méthode mais elle a besoin d'être déclarée
+        return null;
     }
 
     /**
-     * Finds user by pseudo
+     * Récupère un utilisateur à partir de son pseudo.
      *
-     * @param string $pseudo
-     * @return static|null
+     * @param string $pseudo Pseudo de l'utilisateur (unique pour chaque enregistrement)
+     * @return Internaute|null
      */
     public static function findByPseudo($pseudo) {
         $internaute = Internaute::find()->where(['pseudo' => $pseudo])->one();
@@ -65,10 +68,10 @@ class User extends \yii\base\BaseObject implements \yii\web\IdentityInterface {
     }
 
     /**
-     * Finds user by mail
+     * Récupère un utilisateur grâce à son adresse mail.
      *
-     * @param string $mail
-     * @return static|null
+     * @param string $mail Adresse mail de l'utilisateur (unique pour chaque enregistrement)
+     * @return Internaute|null
      */
     public static function findByMail($mail) {
         $internaute = Internaute::find()->where(['mail' => $mail])->one();
@@ -88,40 +91,42 @@ class User extends \yii\base\BaseObject implements \yii\web\IdentityInterface {
     }
 
     /**
-     * {@inheritdoc}
+     * Retourn l'ID de l'utilisateur.
+     * 
+     * @return int
      */
     public function getId() {
         return $this->id;
     }
 
     /**
-     * {@inheritdoc}
+     * Je n'utiliserai pas cette méthode mais elle a besoin d'être déclarée.
      */
     public function getAuthKey() {
         return null;    // Je n'utiliserai pas cette méthode mais elle a besoin d'être déclarée
     }
 
     /**
-     * {@inheritdoc}
+     * Je n'utiliserai pas cette méthode mais elle a besoin d'être déclarée.
      */
     public function validateAuthKey($authKey) {
         return null;    // Je n'utiliserai pas cette méthode mais elle a besoin d'être déclarée
     }
 
     /**
-     * Validates password
+     * Vérifie si le mot de passe entré par l'utilisateur correspond bien au hash de l'utilisateur dans la BDD
      *
-     * @param string $password password to validate
-     * @return bool if password provided is valid for current user
+     * @param string $password Mot de passe à valider
+     * @return true|false
      */
     public function validatePassword($password) {
         return sha1($password) === $this->password;
     }
 
     /**
-     * Affiche les informations d'un utilisateur
+     * Affiche les informations d'un utilisateur.
      * 
-     * @param user Instance de la classe User
+     * @param User $user Instance de la classe User
      */
     public static function afficherInformations($user) {
 
@@ -136,9 +141,5 @@ class User extends \yii\base\BaseObject implements \yii\web\IdentityInterface {
         else echo "<p>N'a pas le permis</p>";
 
     }
-
-    // modifierPrenom($id, $prenom)
-
-    // modifierNom($id, $nom)
 
 }

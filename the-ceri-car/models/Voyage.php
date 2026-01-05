@@ -230,17 +230,26 @@ class Voyage extends ActiveRecord {
         [$v1, $v2] = $voyages;
 
         // Affichage du premier voyage v1
-        self::afficherInformations($v1, $recherche);
+        self::afficherInformations($v1, $recherche, 'public', false);
 
         echo Html::tag('hr');
 
-            // Ville de correspondance 
-            echo Html::tag('h5', Html::tag('strong', 'Correspondance à ' . Html::encode($villeCorrespondance)), ['class' => 'text-center text-primary my-3']);
+            // Calcul du tarif total de la correspondance
+            $trajet1 = Trajet::findTrajetById($v1->trajet);
+            $trajet2 = Trajet::findTrajetById($v2->trajet);
+
+            $tarif_v1 = $v1->tarif * $trajet1->distance;
+            $tarif_v2 = $v2->tarif * $trajet2->distance;
+
+            $prix_total = ($tarif_v1 + $tarif_v2) * $recherche->nb_personnes;
+
+            // Ville de correspondance avec prix total
+            echo Html::tag('h5', Html::tag('strong', 'Correspondance à ' . Html::encode($villeCorrespondance) . ' pour un prix total de ' . $prix_total . ' € pour ' . $recherche->nb_personnes . ' personne' . ($recherche->nb_personnes > 1 ? 's' : '')), ['class' => 'text-center text-primary my-3']);
 
         echo Html::tag('hr');
 
         // Affichage du second voyage v2
-        self::afficherInformations($v2, $recherche);
+        self::afficherInformations($v2, $recherche, 'public', false);
 
         // Bouton pour réserver la correspondance : réserver le nombre de places recherchés dans les deux voyages
         echo Html::beginTag('div', ['class' => 'mt-4 text-end']);
@@ -257,7 +266,6 @@ class Voyage extends ActiveRecord {
         echo Html::endTag('div');
 
     }
-
 
     // modifierTarif($tarif)
 

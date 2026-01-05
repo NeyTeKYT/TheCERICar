@@ -6,12 +6,13 @@ use Yii;
 use yii\base\Model;
 
 /**
- * RechercheForm is the model behind the recherche form.
+ * RechercheForm est le model derrière le formulaire de recherche.
  */
 class RechercheForm extends Model {
 
+    // Données entrées par l'utilisateur pour rechercher un voyage
     public $nb_personnes;
-    public $correspondances;    // boolean
+    public $avec_correspondances = false;    // Par défaut à false, par défaut on ne cherche que les voyages avec des trajets directs.
     public $ville_depart;
     public $ville_arrivee;
 
@@ -21,7 +22,7 @@ class RechercheForm extends Model {
     public function rules() {
         return [
 
-            // Les champs obligatoires
+            // Attributs obligatoires pour rechercher u voyage
             ['nb_personnes', 'required', 'message' => 'Le nombre de passagers doit être renseigné.'],
             ['ville_depart', 'required', 'message' => 'La ville de départ doit être renseignée.'],
             ['ville_arrivee', 'required', 'message' => "La ville d'arrivée doit être renseignée."],
@@ -43,6 +44,10 @@ class RechercheForm extends Model {
             'message' => 'Le nombre de personnes doit être un nombre entier.'
             ],
 
+            // Checkbox pour accepter ou non les correspondances qui fonctionnent avec la recherche de l'utilisateur
+            ['avec_correspondances', 'default', 'value' => 0],
+            ['avec_correspondances', 'in', 'range' => [0, 1]],
+
         ];
     }
 
@@ -55,14 +60,95 @@ class RechercheForm extends Model {
      * @param string Ville d'arrivée du voyage
      * @return Voyage[]|null
      */
-    public static function lancerRecherche($nb_personnes, $correspondances, $ville_depart, $ville_arrivee) {
+    public static function lancerRecherche($nb_personnes, $avec_correspondances, $ville_depart, $ville_arrivee) {
 
-        // Récupère l'instance Trajet correspondante
-        $trajet = Trajet::getTrajet($ville_depart, $ville_arrivee);
-        if(!$trajet) return null;
+        // Recherche de voyages avec trajets directs
+        if(!$avec_correspondances) {
+            // Récupère l'instance Trajet correspondante
+            $trajet = Trajet::getTrajet($ville_depart, $ville_arrivee);
+            if(!$trajet) return null;
 
-        // Récupère les instances de la classe Voyage qui correspondent à la recherche
-        return Voyage::getVoyagesByRecherche($trajet->id, $nb_personnes);
+            // Récupère les instances de la classe Voyage qui correspondent à la recherche
+            $voyages = Voyage::getVoyagesByRecherche($trajet->id, $nb_personnes);
+            if(!$voyages) return null;
+
+            $resultats = [];
+            foreach ($voyages as $voyage) {
+                $resultats[] = [
+                    'type' => 'direct',
+                    'voyage' => $voyage
+                ];
+            }
+            return $resultats;
+
+        }
+
+        $resultats = [];    // Déclare un tableau de resultats vide pour le moment
+
+        // Récupère tous les trajets qui partent de la ville de départ souhaitée par l'utilisateur
+        $trajetsDepart = Trajet::find()->where(['depart' => $ville_depart])->all();
+
+        foreach($trajetsDepart as $t1) {
+
+            // Récupère tous les trajets qui partent de la ville d'arrivée des trajets récupérées et s'arrêtent à la ville d'arrivée souhaitée
+            $trajetsArrivee = Trajet::find()->where(['depart' => $t1->arrivee, 'arrivee' => $ville_arrivee])->all();
+
+            foreach($trajetsArrivee as $t2) {
+
+                // Création d'instances pour les trajets
+                $voyages1 = Voyage::getVoyagesByTrajetId($t1->id);
+                $voyages2 = Voyage::getVoyagesByTrajetId($t2->id);
+
+                Yii::debug([
+                            'trajetsDepart' => count($trajetsDepart),
+                        ], 'DEBUG');
+
+                        Yii::debug([
+                            'trajetsArrivee' => count($trajetsArrivee),
+                        ], 'DEBUG');
+
+                        Yii::debug([
+                            'voyages1' => count($voyages1),
+                            'voyages2' => count($voyages2),
+                        ], 'DEBUG');
+
+                if(empty($voyages1) || empty($voyages2)) continue;
+
+                foreach($voyages1 as $v1) {
+                    foreach($voyages2 as $v2) {
+
+                        $departV1 = $v1->heuredepart * 60;
+                        $departV2 = $v2->heuredepart * 60;
+
+                        // Détermine la durée totale de la correspondance
+                        $duree1 = Trajet::calculerDuree($t1->distance);
+                        $duree2 = Trajet::calculerDuree($t2->distance);
+
+                        // Vérifie la compatibilité de l'heure d'arrivée du voyage 1 avec l'heure de départ du voyage 2 
+                        $heureArriveeV1 = $departV1 + $duree1;
+                        if($heureArriveeV1 >= $departV2) continue;
+
+                        // Empêche une durée de correspondances > à 1440 minutes = 24 heures car sinon on va boucler
+                        $total = ($departV2 - $departV1) + $duree2;
+                        if($total <= 0 || $total > 1440) continue;
+
+                        // Vérifie la disponibilité dans tous les voyages
+                        if(!Voyage::verifierDisponibilite($v1->id, $nb_personnes)) continue;
+                        if(!Voyage::verifierDisponibilite($v2->id, $nb_personnes)) continue;
+
+                        $resultats[] = [
+                            'type' => 'correspondance',
+                            'voyages' => [$v1, $v2],
+                            'ville_correspondance' => $t1->arrivee
+                        ];
+
+                    }
+                }
+            }          
+        }
+
+        return $resultats;
+
     }
 
     /**

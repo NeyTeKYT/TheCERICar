@@ -45,6 +45,18 @@ class Trajet extends ActiveRecord {
         return $distance;   // L'énoncé nous dit que 60km = 60 minutes
     }
 
+    public static function calculerDureeHeures($heureDepart, $heureArrivee) {
+
+        $d1 = intval(substr($heureDepart, 0, 2));
+        $d2 = intval(substr($heureArrivee, 0, 2));
+
+        $duree = $d2 - $d1;
+        if ($duree < 0) $duree += 24;
+
+        return $duree;
+
+    }
+
     // afficherInformations($id)
 
     // modifierVilleDepart($ville_depart)

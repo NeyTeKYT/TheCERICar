@@ -30,9 +30,7 @@ class Voyage extends ActiveRecord {
      * @return Voyage[]|null
      */
     public static function getVoyagesByTrajetId($id_trajet) {
-        $voyages = Voyage::find()->where(['trajet' => $id_trajet])->all();
-        if($voyages) return $voyages;
-        else return null;
+        return Voyage::find()->where(['trajet' => $id_trajet])->all();
     }
 
     /**
@@ -107,7 +105,7 @@ class Voyage extends ActiveRecord {
      * @param Recherche Recherche effectuée par l'utilisateur pour obtenir le voyage
      * @param string    Mode (public | conducteur) pour afficher soit le bouton "Réserver" soit les boutons "Modifier" et "Supprimer"
      */
-    public static function afficherInformations($voyage, $recherche = null, $mode = 'public') {
+    public static function afficherInformations($voyage, $recherche = null, $mode = 'public', bool $afficherBoutonReservation = true) {
 
         // Récupération du trajet correspondant au voyage
         $trajet = Trajet::findTrajetById($voyage->trajet);
@@ -196,7 +194,7 @@ class Voyage extends ActiveRecord {
             if($mode === 'public') {
 
                 // Si le voyage est disponible (le nombre de passagers entré par l'utilisateur est inférieur ou égal au nombre de places disponibles pour ce voyage)
-                if($available) echo Html::button('Réserver', ['class' => 'btn btn-success reserver-voyage', 'data-id_voyage' => $voyage->id, 'data-nb_personnes' => $recherche->nb_personnes]);
+                if($afficherBoutonReservation) if($available) echo Html::button('Réserver', ['class' => 'btn btn-success reserver-voyage', 'data-id_voyage' => $voyage->id, 'data-nb_personnes' => $recherche->nb_personnes]);
 
                 // Sinon affichage d'un bouton rouge non cliquable
                 // On pense à la suite pour l'étape 5 qui devra implémenter la réservation d'un voyage
@@ -219,6 +217,47 @@ class Voyage extends ActiveRecord {
 
         echo Html::endTag('div'); 
     }
+
+    /**
+     * Affiche les informations d'une correspondance
+     * 
+     * @param Voyage[]      Tableau contenant les voyages de la correspondance
+     * @param string        Ville où se fera la correspondance entre les deux voyages
+     * @param Recherche     Recherche effectuée par l'utilisateur
+     */
+    public static function afficherInformationsCorrespondance(array $voyages, string $villeCorrespondance, $recherche) {
+
+        [$v1, $v2] = $voyages;
+
+        // Affichage du premier voyage v1
+        self::afficherInformations($v1, $recherche);
+
+        echo Html::tag('hr');
+
+            // Ville de correspondance 
+            echo Html::tag('h5', Html::tag('strong', 'Correspondance à ' . Html::encode($villeCorrespondance)), ['class' => 'text-center text-primary my-3']);
+
+        echo Html::tag('hr');
+
+        // Affichage du second voyage v2
+        self::afficherInformations($v2, $recherche);
+
+        // Bouton pour réserver la correspondance : réserver le nombre de places recherchés dans les deux voyages
+        echo Html::beginTag('div', ['class' => 'mt-4 text-end']);
+            echo Html::button(
+                'Réserver la correspondance',
+                [
+                    'class' => 'btn btn-success reserver-correspondance',
+                    'data-id_voyage_1' => $v1->id,
+                    'data-id_voyage_2' => $v2->id,
+                    'data-nb_personnes' => $recherche->nb_personnes,
+                    'type' => 'button'
+                ]
+            );
+        echo Html::endTag('div');
+
+    }
+
 
     // modifierTarif($tarif)
 

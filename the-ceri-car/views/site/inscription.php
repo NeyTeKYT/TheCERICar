@@ -11,7 +11,7 @@ echo Html::beginTag('div');
 
         // Affichage du titre de la page avec une description
         echo Html::tag('h1', Html::encode($this->title));
-        echo Html::tag('p', Html::encode("Complétez les champs pour vous inscrire."));
+        echo Html::tag('p', Html::encode("Complétez les champs pour vous inscrire."), ['class' => 'lead']);
 
     echo Html::endTag('div');
 

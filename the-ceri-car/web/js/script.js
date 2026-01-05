@@ -39,7 +39,7 @@ $(document).on('submit', '#recherche-form', function(e) {
 
         error: function() {
             // Mise à jour du contenu du bandeau
-            showNotification("Une erreur est survenue.", false);
+            showNotification(data.notification, data.success);
         }
 
     });
@@ -54,8 +54,8 @@ $(document).on('submit', '#login-form', function(e) {
     $.ajax({
         url: '/site/login', // URL vers l'action dans le controller
         type: 'POST',
-        data: $(this).serialize(),
-        dataType: 'json',   // Adapte le format JSON en string
+        data: $(this).serialize(),  // Adapte le format JSON en string
+        dataType: 'json',
 
         success: function(data) {
 
@@ -82,8 +82,8 @@ $(document).on('submit', '#registration-form', function(e) {
     $.ajax({
         url: '/site/inscription',   // URL vers l'action dans le controller
         type: 'POST',
-        data: $(this).serialize(),
-        dataType: 'json',   // Adapte le format JSON en string
+        data: $(this).serialize(),  // Adapte le format JSON en string
+        dataType: 'json',
 
         success: function(data) {
 
@@ -113,7 +113,7 @@ $(document).on('submit', '#logout-form', function(e) {
         data: {
             _csrf: yii.getCsrfToken()
         },
-        dataType: 'json',   // Adapte le format JSON en string
+        dataType: 'json',
 
         success: function(data) {
 
@@ -134,11 +134,48 @@ $(document).on('submit', '#logout-form', function(e) {
 
 });
 
+// Ajouter une réservation pour une correspondance (2 voyages)
+$(document).on('click', '.reserver-correspondance', function () {
+
+    $.ajax({
+        url: '/site/reserver-correspondance',  // Action dédiée dans le controller
+        type: 'POST',
+        data: {
+            id_voyage_1: $(this).data('id_voyage_1'),
+            id_voyage_2: $(this).data('id_voyage_2'),
+            nb_personnes: $(this).data('nb_personnes'),
+            _csrf: yii.getCsrfToken()
+        },
+        dataType: 'json',
+
+        success: function (data) {
+
+            // Mise à jour du contenu du bandeau
+            showNotification(data.notification, data.success);
+
+            // Redirection vers la page des réservations si succès
+            if (data.success) {
+                setTimeout(() => {
+                    window.location.href = '/site/mes-reservations';
+                }, 5000);
+            }
+
+        },
+
+        error: function () {
+            showNotification(
+                "Erreur lors de la réservation de la correspondance.",
+                false
+            );
+        }
+    });
+});
+
 // Ajouter une réservation à un voyage
 $(document).on('click', '.reserver-voyage', function () {
 
     $.ajax({
-        url: '/site/reserver',
+        url: '/site/reserver',  // URL vers l'action dans le controller
         type: 'POST',
         data: {
             id_voyage: $(this).data('id_voyage'),
@@ -149,14 +186,17 @@ $(document).on('click', '.reserver-voyage', function () {
 
         success: function (data) {
 
+            // Mise à jour du contenu du bandeau
             showNotification(data.notification, data.success);
 
-            if(data.success) setTimeout(() => {window.location.href = '/site/mes-reservations'}, 3000);
+            // Redirige l'utilisateur en cas de succès sur la page des réservations effectuées au bout de 5 secondes (le temps pour lui de lire la notification)
+            if(data.success) setTimeout(() => {window.location.href = '/site/mes-reservations'}, 5000);
 
         },
 
         error: function () {
-            showNotification('Erreur lors de la réservation.', false);
+            // Mise à jour du contenu du bandeau
+            showNotification(data.notification, data.success);
         }
     });
 });
@@ -164,24 +204,26 @@ $(document).on('click', '.reserver-voyage', function () {
 // Soumission du formulaire pour modifier une réservation
 $(document).on('click', '#modifier-reservation-form', function(e) {
 
-    e.preventDefault(); // Empêche de recharger entièrement la page (= contradictoire avec Ajax)
-
     $.ajax({
-        url: $(this).attr('action'),  // URL vers l'action dans le controller
+        url: $(this).attr('action'),  // Récupération de l'action déclarée avec le formulaire
         type: 'POST',
-        data: $(this).serialize(),
+        data: $(this).serialize(),  // Adapte le format JSON en string
         dataType: 'json',
 
         success: function(data) {
 
+            // Mise à jour du contenu du bandeau
             showNotification(data.notification, data.success);
 
-            if(data.success) setTimeout(() => {window.location.href = '/site/mes-reservations';}, 5000);
+            // Redirige l'utilisateur en cas de succès sur la page des réservations effectuées au bout de 5 secondes (le temps pour lui de lire la notification)
+            if(data.success) setTimeout(() => {window.location.href = '/site/mes-reservations'}, 5000);
+
             
         },
 
         error: function() {
-            showNotification('Erreur lors de la modification.', false);
+            // Mise à jour du contenu du bandeau
+            showNotification(data.notification, data.success);
         }
     });
 });
@@ -204,7 +246,7 @@ $(document).on('click', '.supprimer-reservation', function (e) {
 
             showNotification(data.notification, data.success);
 
-            if(data.success) setTimeout(() => {location.reload();}, 1000);
+            if(data.success) setTimeout(() => {location.reload();}, 3000);
 
         },
 
@@ -281,8 +323,8 @@ $(document).on('submit', '#mon-compte-form', function(e) {
     $.ajax({
         url: '/site/mon-compte',    // URL vers l'action dans le controller
         type: 'POST',
-        data: $(this).serialize(),
-        dataType: 'json',   // Adapte le format JSON en string
+        data: $(this).serialize(),  // Adapte le format JSON en string
+        dataType: 'json',
 
         success: function(data) {
 

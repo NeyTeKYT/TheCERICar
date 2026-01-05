@@ -13,8 +13,13 @@ class Reservation extends ActiveRecord {
 
     public function rules() {
         return [
-            [['nbplaceresa'], 'required'],
-            [['nbplaceresa'], 'integer', 'min' => 1],
+
+            // Un seul champ : le nombre de place réservées pour la réservation
+            [['nbplaceresa'], 'required', 'message' => 'Le nombre de places réservées doit être renseigné.'],
+            [['nbplaceresa'], 'integer', 'min' => 1,
+                "tooSmall" => "Le nombre de places réservées doit être minimum 1.",
+                "message" => "Le nombre de places réservées doit être un nombre."
+            ],
         ];
     }
 
@@ -22,12 +27,10 @@ class Reservation extends ActiveRecord {
      * Récupère toutes les réservations effectuées par un utilisateur
      * 
      * @param id $id l'ID de l'utilisateur
-     * @return Voyage[]|null
+     * @return Voyage[]
      */
     public static function findReservationsByUserId($id) {
-        $reservations = Reservation::find()->where(['voyageur' => $id])->all();
-        if($reservations) return $reservations;
-        else return null;
+        return Reservation::find()->where(['voyageur' => $id])->all();
     }
 
     /**
@@ -37,10 +40,9 @@ class Reservation extends ActiveRecord {
      * @return Voyage[]
      */
     public static function getReservationsByVoyageId($id_voyage) {
-        $reservations = Reservation::find()->where(['voyage' => $id_voyage])->all();
+        return Reservation::find()->where(['voyage' => $id_voyage])->all();
         /*if($reservations) return $reservations;
         else return null;*/
-        return $reservations;
     }
 
     public static function getReservationById($id) {
@@ -51,7 +53,7 @@ class Reservation extends ActiveRecord {
     /**
      * Affiche les informations d'une réservation
      * 
-     * @param reservation Instance de la classe Reservation
+     * @param reservation $reservation Instance de la classe Reservation
      */
 
     public static function afficherInformations($reservation) {
@@ -134,7 +136,7 @@ class Reservation extends ActiveRecord {
         echo Html::beginTag('div', ['class' => 'mt-3 text-end']);
 
             // Affichage d'un bouton pour modifier la réservation
-            echo Html::a('Modifier le nombre de places réservées', ['site/modifier-reservation', 'id' => $reservation->id], ['class' => 'btn btn-warning me-2']);
+            echo Html::a('Modifier le nombre de places réservées', ['site/modifier-reservation', 'id' => $reservation->id], ['class' => 'btn btn-custom me-2']);
 
             // Affichage d'un bouton pour supprimer la réservation
             echo Html::button(

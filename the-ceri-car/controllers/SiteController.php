@@ -62,7 +62,7 @@ class SiteController extends Controller {
     }
 
     /**
-     * Affiche la page d'accueil
+     * Affiche la page d'accueil.
      * 
      */
     public function actionIndex() {
@@ -81,37 +81,63 @@ class SiteController extends Controller {
      */
     public function actionRecherche() {
 
-        // Création d'une instance pour modéliser le formulaire de recherche
-        $recherche = new RechercheForm();
+        Yii::$app->response->format = Response::FORMAT_JSON;    // Évite de faire "return $this->asJson()"
 
+        $recherche = new RechercheForm();   // Création d'une instance pour modéliser le formulaire de recherche
         // Initialise les attributs de l'instance RechercheForm à partir des valeurs transmises via le formulaire
         $recherche->load(Yii::$app->request->get(), 'RechercheForm');
 
         // Par défaut, aucun résultat n'a été trouvé
         $resultats = null;
+        $success = false;   // par défaut
 
         // Si la recherche est valide = pas d'erreurs détectée (voir la méthode rules())
         if($recherche->validate()) {
+
             $resultats = RechercheForm::lancerRecherche(
                 $recherche->nb_personnes,
-                false,  // pour le moment on ne traite pas encore les correspondances
+                $recherche->avec_correspondances,   // Traitement des correspondances
                 $recherche->ville_depart,
                 $recherche->ville_arrivee
             );
 
-            // Vérifie que le trajet entré par l'utilisateur existe dans la BDD
-            $trajet_recherche = Trajet::getTrajet($recherche->ville_depart, $recherche->ville_arrivee);
-            if(!$trajet_recherche) $notification = "Le trajet renseigné est indisponible !";
+            // Cas sans correspondances : on ne recherche des voyages qui n'utilisent que le trajet direct (ville de départ -> ville d'arrivée)
+            if(!$recherche->avec_correspondances) {
 
-            else if($resultats) {
+                if(empty($resultats)) {
+                    return [
+                        'success' => false,
+                        'notification' => "Le trajet renseigné est indisponible !",
+                        'html' => ""
+                    ];
+                }
+            }
+
+            if(!empty($resultats)) {
 
                 // Récupération du nombre de voyages disponibles = encore réservables
                 $nb_voyages_dispo = 0;
-                foreach($resultats as $voyage) if(Voyage::verifierDisponibilite($voyage->id, $recherche->nb_personnes)) $nb_voyages_dispo++;
+                foreach ($resultats as $resultat) {
+                    if($resultat['type'] === 'direct') {
+                        if(Voyage::verifierDisponibilite($resultat['voyage']->id, $recherche->nb_personnes)) $nb_voyages_dispo++;
+                    } 
+                    else {
+                        [$v1, $v2] = $resultat['voyages'];
+                        if(Voyage::verifierDisponibilite($v1->id, $recherche->nb_personnes) && Voyage::verifierDisponibilite($v2->id, $recherche->nb_personnes)) $nb_voyages_dispo++;
+                    }
+                }
 
                 // Messages différents dans la barre de notification selon si un ou plusieurs voyages ont été trouvés
-                if($nb_voyages_dispo > 1) $notification = "Plusieurs voyages ont été trouvés correspondants à votre recherche !";
-                else if($nb_voyages_dispo == 1) $notification = "Un voyage a été trouvé correspondant à votre recherche !"; 
+                $type_voyage = $recherche->avec_correspondances ? 'correspondance' : 'voyage';
+
+                if($nb_voyages_dispo > 1) {
+                    $success = true;
+                    $notification = "Recherche effectuée avec succès ! Plusieurs $type_voyage" . "s ont été trouvées correspondant à votre recherche !";
+                }
+                else if($nb_voyages_dispo === 1) {
+                    $success = true;
+                    $notification = "Recherche effectuée avec succès ! Une $type_voyage a été trouvée correspondant à votre recherche !";
+                }
                 else $notification = "Tous les voyages disponibles ne permettent pas d'accueillir $recherche->nb_personnes passagers !";
 
             }
@@ -119,18 +145,76 @@ class SiteController extends Controller {
             else $notification = "Aucun voyage correspondant à votre recherche !";
 
             // Retourne les données via JSON
-            return $this->asJson(['notification' => $notification,
+            return [
+                'success' => $success, 'notification' => $notification,
                 // renderAjax() ne retourne que la vue avec les modifications effectuées
                 'html' => $this->renderAjax('_resultats', [     // les vues partielles sont nommées _[nom de la view].php !
                     'resultats' => $resultats,
                     'recherche' => $recherche
                 ])
-            ]);
+            ];
 
         }
 
-        return $this->asJson(['notification' => "Votre recherche est invalide ! Veuillez réessayer ultérieurement.", 'html' => ""]);
+        // Problème lors de la recherche d'un voyage dans la BDD correspondant à la recherche donc affichage de toutes les erreurs trouvées
+        $errors = $recherche->getFirstErrors();
+        return ['success' => $success, 'notification' => implode("\n", $errors), 'html' => ""];
 
+    }
+
+    /**
+     * Réservation de plusieurs voyages pour la réservation d'une correspondance
+     * 
+     */
+    public function actionReserverCorrespondance() {
+
+        Yii::$app->response->format = Response::FORMAT_JSON;    // Évite de faire "return $this->asJson()"
+
+        // Redirige l'utilisateur vers le formulaire de connexion si il tente d'accéder à la page alors qu'il n'est pas connecté
+        if(Yii::$app->user->isGuest) return $this->redirect(['site/login']);
+
+        $idVoyage1 = Yii::$app->request->post('id_voyage_1');
+        $idVoyage2 = Yii::$app->request->post('id_voyage_2');
+        $nbPersonnes = Yii::$app->request->post('nb_personnes');
+
+        $v1 = Voyage::getVoyageById($idVoyage1);
+        $v2 = Voyage::getVoyageById($idVoyage2);
+
+        if(!$v1 || !$v2) return ['success' => false, 'notification' => 'Correspondance indisponible.'];
+
+        // Vérifications
+        foreach([$v1, $v2] as $voyage) {
+            if($voyage->conducteur == Yii::$app->user->id) return ['success' => false, 'notification' => 'Vous êtes conducteur d’un des voyages.'];
+            if(!Voyage::verifierDisponibilite($voyage->id, $nbPersonnes)) return ['success' => false, 'notification' => 'Une des étapes n’est plus disponible.'];
+        }
+
+        $transaction = Yii::$app->db->beginTransaction();
+
+        try {
+
+            foreach([$v1, $v2] as $voyage) {
+
+                $reservation = new Reservation();
+                $reservation->voyageur = Yii::$app->user->id;
+                $reservation->voyage = $voyage->id;
+                $reservation->nbplaceresa = $nbPersonnes;
+
+                if(!$reservation->save()) throw new \Exception('Erreur de réservation.');
+
+            }
+
+            $transaction->commit();
+            return ['success' => true, 'notification' => 'Correspondance réservée avec succès !'];
+
+        } catch (\Throwable $e) {
+
+            $transaction->rollBack();   // Retour en arrière : toute réservation effectuée dans le try est annulée
+
+            return [
+                'success' => false,
+                'notification' => 'Une erreur est survenue lors de la réservation de la correspondance. Veuillez réessayer ultérieurement.',
+            ];
+        }
     }
 
     /**
@@ -139,10 +223,8 @@ class SiteController extends Controller {
      */
     public function actionReserver() {
 
-        Yii::$app->response->format = Response::FORMAT_JSON;    // Évite de faire "return $this->asJson()"
-
-        // Empêche l'utilisateur de réserver un voyage si il n'est pas connecté
-        if(Yii::$app->user->isGuest) return ['success' => false, 'notification' => 'Vous devez être connecté pour réserver un voyage.'];
+        // Redirige l'utilisateur vers le formulaire de connexion si il tente d'accéder à la page alors qu'il n'est pas connecté
+        if(Yii::$app->user->isGuest) return $this->redirect(['site/login']);
 
         // Récupération des champs cachés envoyés lors de la requête POST au clique sur le bouton
         $id_voyage = Yii::$app->request->post('id_voyage');
@@ -151,6 +233,8 @@ class SiteController extends Controller {
         // Récupération de l'instance voyage
         $voyage = Voyage::getVoyageById($id_voyage);
 
+        Yii::$app->response->format = Response::FORMAT_JSON;    // Évite de faire "return $this->asJson()"
+
         // Vérifie que le voyage existe bien (peut avoir été supprimé entre temps)
         if(!$voyage) return ['success' => false, 'notification' => 'Voyage indisponible !'];
 
@@ -158,7 +242,7 @@ class SiteController extends Controller {
         if($voyage->conducteur == Yii::$app->user->id) return ['success' => false, 'notification' => 'Vous êtes le conducteur de ce voyage ! Vous ne pouvez pas effectuer de réservation à bord de votre propre voyage !'];
 
         // Vérifie la disponibilité du voyage en fonction du nombre de personnes
-        if(!Voyage::verifierDisponibilite($voyage->id, $nb_personnes)) return $this->asJson(['success' => false, 'notification' => "Ce voyage n'est plus disponible !"]);
+        if(!Voyage::verifierDisponibilite($voyage->id, $nb_personnes)) return (['success' => false, 'notification' => "Ce voyage n'est plus disponible !"]);
 
         // Création d'une instance de la classe Reservation
         $reservation = new Reservation();
@@ -167,10 +251,12 @@ class SiteController extends Controller {
         $reservation->voyage = $voyage->id;
         $reservation->nbplaceresa = $nb_personnes;
 
-        // Si la réservation n'a pas pu être insérée dans la base de données
-        if(!$reservation->save()) return ['success' => false, 'notification' => 'Erreur lors de la réservation.'];
-        // Réservation bien insérée dans la base de données
-        else return ['success' => true, 'notification' => 'Réservation effectuée ! Vous allez être automatiquement redirigé vers la liste de vos réservations.'];
+        // Si la réservation a bien été insérée dans la BDD 
+        if($reservation->save()) return ['success' => true, 'notification' => 'Réservation effectuée ! Vous allez être automatiquement redirigé vers la liste de vos réservations.'];
+        
+        // Problème lors de l'insertion de la réservation dans la BDD
+        $errors = $model->getFirstErrors();
+        return ['success' => false, 'notification' => implode("\n", $errors)]; 
 
     }
 
